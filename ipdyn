@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+#===================================================================================
+#   IPTABLES Dynamic IP Management
+#   Version 1.1
+#
+#   Stefan Traub
+#===================================================================================
+
+import re
+import socket
+import os
+import time
+
+# ---------- some constants --------------
+tmpfile="/tmp/ipsave"
+iptables="/sbin/iptables "
+iptablessave="/sbin/iptables-save "
+
+# --------- start -----------------------
+print("check at " + time.ctime())
+
+#save current iptables
+os.system(iptablessave+">"+tmpfile)
+
+# read the iptables save file
+with open (tmpfile, "r") as myfile:
+    data=myfile.readlines()
+
+# check file
+ln=0
+for l in data:
+
+#   extract table name from file and setup -t option
+    m = re.search("^\*(?P<Name>.*)", l)
+    if m!= None:
+	ln=1
+        tname = m.group("Name")
+        if tname == "filter":
+            topt = ""
+        else:
+            topt = "-t " + tname + " "
+
+#   now search if we find any dynamic entires
+    m = re.search('--comment "DYN:(?P<Name>.*)=(?P<IP>.*)"', l)
+    if m != None:
+        newip = socket.gethostbyname(m.group('Name'))
+        if newip != m.group('IP'):
+            delcmd = iptables + topt + l.replace("-A ","-D ")
+            print(delcmd)
+	    os.system(delcmd)
+            inscmd = iptables + topt + l.replace("-A ","-I ").replace(m.group('IP'), newip)
+
+            op = re.search('^(?P<OP>-. .*? )', l)
+            if op != None:
+                opc = op.group("OP").replace("-A ","-I ")
+                inscmd = inscmd.replace(opc, opc + str(ln) + " ")
+
+            print(inscmd)
+	    os.system(inscmd)
+
+    if re.search('^(#|:|\*)', l) == None:
+        ln=ln+1
