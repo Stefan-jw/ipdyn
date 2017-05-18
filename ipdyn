@@ -29,6 +29,7 @@ with open (tmpfile, "r") as myfile:
 
 # check file
 ln=0
+chain=""
 for l in data:
 
 #   extract table name from file and setup -t option
@@ -40,6 +41,14 @@ for l in data:
             topt = ""
         else:
             topt = "-t " + tname + " "
+
+#   look for chain change
+    m = re.search("^-. (?P<Name>.*?) ", l)
+    if m!= None:
+	if m.group("Name") != chain:
+	    ln=1
+	    chain = m.group("Name")
+#    print(str(ln)+": "+l)
 
 #   now search if we find any dynamic entires
     m = re.search('--comment "DYN:(?P<Name>.*)=(?P<IP>.*)"', l)
