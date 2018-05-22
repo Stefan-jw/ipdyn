@@ -10,6 +10,7 @@
 import re
 import socket
 import os
+import sys
 import time
 
 # ---------- some constants --------------
@@ -19,6 +20,11 @@ iptablessave="/sbin/iptables-save "
 
 # --------- start -----------------------
 print("check at " + time.ctime())
+sim=False
+if len(sys.argv)>1:
+    if (sys.argv[1] == "-s"):
+        sim=True
+        print "simulate"
 
 #save current iptables
 os.system(iptablessave+">"+tmpfile)
@@ -57,7 +63,8 @@ for l in data:
         if newip != m.group('IP'):
             delcmd = iptables + topt + l.replace("-A ","-D ")
             print(delcmd)
-	    os.system(delcmd)
+            if (not sim):
+                os.system(delcmd)
             inscmd = iptables + topt + l.replace("-A ","-I ").replace(m.group('IP'), newip)
 
             op = re.search('^(?P<OP>-. .*? )', l)
@@ -66,7 +73,8 @@ for l in data:
                 inscmd = inscmd.replace(opc, opc + str(ln) + " ")
 
             print(inscmd)
-	    os.system(inscmd)
+            if (not sim):
+	        os.system(inscmd)
 
     if re.search('^(#|:|\*)', l) == None:
         ln=ln+1
