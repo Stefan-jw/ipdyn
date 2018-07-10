@@ -59,22 +59,25 @@ for l in data:
 #   now search if we find any dynamic entires
     m = re.search('--comment "DYN:(?P<Name>.*)=(?P<IP>.*)"', l)
     if m != None:
-        newip = socket.gethostbyname(m.group('Name'))
-        if newip != m.group('IP'):
-            delcmd = iptables + topt + l.replace("-A ","-D ")
-            print(delcmd)
-            if (not sim):
-                os.system(delcmd)
-            inscmd = iptables + topt + l.replace("-A ","-I ").replace(m.group('IP'), newip)
+        try:
+            newip = socket.gethostbyname(m.group('Name'))
+            if newip != m.group('IP'):
+                delcmd = iptables + topt + l.replace("-A ","-D ")
+                print(delcmd)
+                if (not sim):
+                    os.system(delcmd)
+                inscmd = iptables + topt + l.replace("-A ","-I ").replace(m.group('IP'), newip)
 
-            op = re.search('^(?P<OP>-. .*? )', l)
-            if op != None:
-                opc = op.group("OP").replace("-A ","-I ")
-                inscmd = inscmd.replace(opc, opc + str(ln) + " ")
+                op = re.search('^(?P<OP>-. .*? )', l)
+                if op != None:
+                    opc = op.group("OP").replace("-A ","-I ")
+                    inscmd = inscmd.replace(opc, opc + str(ln) + " ")
 
-            print(inscmd)
-            if (not sim):
-	        os.system(inscmd)
+                print(inscmd)
+                if (not sim):
+                    os.system(inscmd)
+        except:
+            print("DNS entry not found " + m.group('Name'))
 
     if re.search('^(#|:|\*)', l) == None:
         ln=ln+1
